@@ -6,6 +6,9 @@ today_str = today.strftime("%Y-%m-%d")
 CSV_URL = "https://www.wbgt.env.go.jp/prev15WG/dl/yohou_50551.csv"
 csv_lines = requests.get(CSV_URL, timeout=15).text.splitlines()
 
+# --- 🔍 追加ログ出力：CSVヘッダーを確認 -------------------------
+print("HEADER LINE (raw):", csv_lines[0])
+
 # --- 1. ヘッダーを動的に取得 ---------------------------------
 header = next(csv.reader([csv_lines[0]]))
 # date / 日付 列のインデックス（英日どちらでも可）
