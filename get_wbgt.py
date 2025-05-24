@@ -3,21 +3,20 @@ import csv, requests
 CSV_URL = "https://www.wbgt.env.go.jp/prev15WG/dl/yohou_50551.csv"
 csv_lines = requests.get(CSV_URL, timeout=15).text.splitlines()
 reader = list(csv.reader(csv_lines))
+
+# ログ出力で確認（任意）
 print("DATA ROW:", reader[1][:8])
+print("HEADER:", reader[0][:5])
 
-
-# ヘッダー確認（任意ログ）
-print("HEADER:", reader[0][:5])  # 最初の5列だけ表示
-
-# 2行目が実データ（1地点のみ）
+# 2行目が本データ行（確定）
 data_row = reader[1]
 
-# 3列目以降（WBGT値）から安全に数値だけ抽出
+# 3列目以降のWBGT値（文字列） → 10分の1にしてfloat化
 wbgt_values = []
 for val in data_row[2:]:
     try:
-        num = float(val)
-        if 0 < num < 60:   # 常識的なWBGT範囲（例：0〜60℃）
+        num = float(val.strip()) / 10  # ← ここで10分の1に補正
+        if 0 < num < 60:               # 現実的なWBGT範囲
             wbgt_values.append(num)
     except ValueError:
         continue
@@ -27,7 +26,7 @@ if not wbgt_values:
 
 wbgt_max = round(max(wbgt_values), 1)
 
-# メッセージ生成
+# 注意レベルメッセージ
 if wbgt_max < 25:
     advice = "通常作業可。ただし水分補給を励行し、適宜休憩を。"
 elif wbgt_max < 28:
