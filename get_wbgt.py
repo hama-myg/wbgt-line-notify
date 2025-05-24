@@ -1,35 +1,32 @@
-import os, re, math, requests
-from bs4 import BeautifulSoup
-from datetime import datetime, timezone, timedelta
+import csv, datetime, requests
 
-# ---- 1. tenki.jp 熱中症情報（掛川市）を取得 -------------------
-URL = "https://tenki.jp/heatstroke/5/25/5040/22213/"
+# ---- 1. きょうの日付文字列 -------------------------------
+today = datetime.date.today()               # 例: 2025-05-24
+today_str = today.strftime("%Y-%m-%d")      # CSV の日付形式
 
-html = requests.get(
-    URL,
-    headers={"User-Agent": "Mozilla/5.0"},  # UAを付けてブロック回避
-    timeout=15
-).text
-soup = BeautifulSoup(html, "lxml")
+# ---- 2. 掛川市（地点 50551）の 3 日間予測 CSV を取得 -------
+CSV_URL = "https://www.wbgt.env.go.jp/prev15WG/dl/yohou_50551.csv"
+csv_text = requests.get(CSV_URL, timeout=15).text.splitlines()
 
-# ---- 2. 「今日の最高：xx.x℃以上yy.y℃未満」を探す ------------
-m = re.search(
-    r"今日の最高：\s*(\d+(?:\.\d+)?)℃以上(\d+(?:\.\d+)?)℃未満",
-    soup.get_text()
-)
+# ---- 3. 当日行だけ抽出し、最高 WBGT を求める -------------
+reader = csv.DictReader(csv_text)
+wbgt_today = [
+    float(row["WBGT"])                       # 列名は「WBGT」
+    for row in reader
+    if row["日付"] == today_str and row["WBGT"]
+]
+if not wbgt_today:
+    raise RuntimeError("本日のデータが取得できませんでした。CSV 仕様変更の可能性")
 
-if not m:
-    raise RuntimeError("WBGTレンジが取れませんでした。ページ構造が変わった可能性")
-low, high = map(float, m.groups())
-wbgt_max = round(high - 0.1, 1)   # 上限値 -0.1℃ を擬似最高値とする
+wbgt_max = round(max(wbgt_today), 1)
 
-# ---- 3. 注意コメントを生成 ------------------------------------
+# ---- 4. 注意コメントを生成 -------------------------------
 if wbgt_max < 25:
     advice = "通常作業可。ただし水分補給を励行し、適宜休憩を。"
 elif wbgt_max < 28:
-    advice = "⚠️警戒：作業強度に応じて1時間に1回以上休憩を推奨。"
+    advice = "⚠️警戒：1時間に1回以上休憩を推奨。"
 elif wbgt_max < 31:
-    advice = "⚠️厳重警戒：負荷軽減＋30分ごとに日陰/冷房休憩必須。"
+    advice = "⚠️厳重警戒：負荷軽減＋30分ごとに冷所休憩必須。"
 else:
     advice = "🚨危険：空調服必須、30分ごとに冷所休憩と水分補給！"
 
