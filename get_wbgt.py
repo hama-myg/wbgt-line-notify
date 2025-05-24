@@ -4,17 +4,24 @@ CSV_URL = "https://www.wbgt.env.go.jp/prev15WG/dl/yohou_50551.csv"
 csv_lines = requests.get(CSV_URL, timeout=15).text.splitlines()
 reader = list(csv.reader(csv_lines))
 
-# ヘッダー確認（オプション）
+# ヘッダー確認（任意ログ）
 print("HEADER:", reader[0][:5])  # 最初の5列だけ表示
 
-# 2行目が実データ（1地点だけ）
+# 2行目が実データ（1地点のみ）
 data_row = reader[1]
 
-# 3列目以降が各時刻のWBGT値
-wbgt_values = [float(val) for val in data_row[2:] if val]
+# 3列目以降（WBGT値）から安全に数値だけ抽出
+wbgt_values = []
+for val in data_row[2:]:
+    try:
+        num = float(val)
+        if 0 < num < 60:   # 常識的なWBGT範囲（例：0〜60℃）
+            wbgt_values.append(num)
+    except ValueError:
+        continue
 
 if not wbgt_values:
-    raise RuntimeError("WBGT値が取得できませんでした。CSV構造の変更かデータ欠損")
+    raise RuntimeError("WBGT値が取得できませんでした（全データが無効）")
 
 wbgt_max = round(max(wbgt_values), 1)
 
