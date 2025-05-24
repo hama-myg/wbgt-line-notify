@@ -3,6 +3,8 @@ import csv, requests
 CSV_URL = "https://www.wbgt.env.go.jp/prev15WG/dl/yohou_50551.csv"
 csv_lines = requests.get(CSV_URL, timeout=15).text.splitlines()
 reader = list(csv.reader(csv_lines))
+print("DATA ROW:", reader[1][:8])
+
 
 # ヘッダー確認（任意ログ）
 print("HEADER:", reader[0][:5])  # 最初の5列だけ表示
