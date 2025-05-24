@@ -13,7 +13,7 @@ html = requests.get(
 soup = BeautifulSoup(html, "lxml")
 
 # ---- 2. 「今日の最高：xx.x℃以上yy.y℃未満」を探す ------------
-m = re.search(r"今日の最高：([\d\.]+)℃以上([\d\.]+)℃未満", soup.get_text())
+m = re.search(r"今日の最高：\s*(\d+(?:\.\d+)?)℃以上(\d+(?:\.\d+)?)℃未満", soup.get_text())
 if not m:
     raise RuntimeError("WBGTレンジが取れませんでした。ページ構造が変わった可能性")
 low, high = map(float, m.groups())
