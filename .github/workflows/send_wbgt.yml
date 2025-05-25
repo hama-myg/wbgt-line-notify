@@ -3,7 +3,7 @@ name: wbgt-test
 on:
   schedule:
     - cron: '0 23 * * *'   # 毎日08:00 JST（23:00 UTC）
-  workflow_dispatch:        # 手動実行も残しておく
+  workflow_dispatch:        # 手動実行も残しておく# ←テスト
 
 jobs:
   run:
