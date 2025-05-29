@@ -7,11 +7,11 @@ reader = list(csv.reader(csv_lines))
 # 2行目が本データ行（確定）
 data_row = reader[1]
 
-# 3列目以降のWBGT値（文字列） → 10分の1にしてfloat化
+# 今日（0:00〜23:50）のWBGT値：2列目～145列目（計144個）
 wbgt_values = []
-for val in data_row[2:]:
+for val in data_row[2 : 2 + 144]:  # ← 今日分だけに限定
     try:
-        num = float(val.strip()) / 10  # ← ここで10分の1に補正
+        num = float(val.strip()) / 10  # 10分の1に補正
         if 0 < num < 60:               # 現実的なWBGT範囲
             wbgt_values.append(num)
     except ValueError:
@@ -32,4 +32,4 @@ elif wbgt_max < 31:
 else:
     advice = "🚨危険：空調服必須、30分ごとに冷所休憩と水分補給！"
 
-print(f"本日のWBGT最高予想は{wbgt_max}℃です。\n{advice}")
+print(f"本日（0:00〜23:50）のWBGT最高予想は {wbgt_max}℃ です。\n{advice}")
