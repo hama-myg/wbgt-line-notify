@@ -1,28 +1,42 @@
-import csv, requests
+import csv
+import requests
+from datetime import datetime, timedelta
 
+# --- 現在日付を取得（JST） ---
+today = (datetime.utcnow() + timedelta(hours=9)).strftime("%Y%m%d")  # 例：'20240529'
+
+# --- CSV読み込み ---
 CSV_URL = "https://www.wbgt.env.go.jp/prev15WG/dl/yohou_50551.csv"
-csv_lines = requests.get(CSV_URL, timeout=15).text.splitlines()
+response = requests.get(CSV_URL, timeout=15)
+response.encoding = 'utf-8'  # 文字コードを指定
+csv_lines = response.text.splitlines()
 reader = list(csv.reader(csv_lines))
 
-# 2行目が本データ行（確定）
+header = reader[0]
 data_row = reader[1]
 
-# 今日（0:00〜23:50）のWBGT値：2列目～145列目（計144個）
+# --- ヘッダーの日付から「今日のWBGT列」のインデックスを取得 ---
+today_indexes = [
+    i for i, col in enumerate(header)
+    if col.startswith(today) and i < len(data_row)
+]
+
+# --- 今日のWBGT値のみを取得 ---
 wbgt_values = []
-for val in data_row[2 : 2 + 144]:  # ← 今日分だけに限定
+for i in today_indexes:
     try:
-        num = float(val.strip()) / 10  # 10分の1に補正
-        if 0 < num < 60:               # 現実的なWBGT範囲
+        num = float(data_row[i].strip()) / 10
+        if 0 < num < 60:
             wbgt_values.append(num)
     except ValueError:
         continue
 
 if not wbgt_values:
-    raise RuntimeError("WBGT値が取得できませんでした（全データが無効）")
+    raise RuntimeError("今日のWBGT値が取得できませんでした（全データが無効）")
 
 wbgt_max = round(max(wbgt_values), 1)
 
-# 注意レベルメッセージ
+# --- 注意レベルメッセージ ---
 if wbgt_max < 25:
     advice = "通常作業可。ただし水分補給を励行し、適宜休憩を。"
 elif wbgt_max < 28:
@@ -32,4 +46,4 @@ elif wbgt_max < 31:
 else:
     advice = "🚨危険：空調服必須、30分ごとに冷所休憩と水分補給！"
 
-print(f"本日（0:00〜23:50）のWBGT最高予想は {wbgt_max}℃ です。\n{advice}")
+print(f"本日（{today}）のWBGT最高予想は {wbgt_max}℃ です。\n{advice}")
