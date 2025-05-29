@@ -9,7 +9,7 @@ data_row = reader[1]
 
 # 3列目以降のWBGT値（文字列） → 10分の1にしてfloat化
 wbgt_values = []
-for val in data_row[2:]:
+for val in data_row[2:2+48]:  # ← 2列目からスタートして48個だけ見る
     try:
         num = float(val.strip()) / 10  # ← ここで10分の1に補正
         if 0 < num < 60:               # 現実的なWBGT範囲
