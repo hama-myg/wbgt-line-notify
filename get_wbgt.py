@@ -4,10 +4,6 @@ CSV_URL = "https://www.wbgt.env.go.jp/prev15WG/dl/yohou_50551.csv"
 csv_lines = requests.get(CSV_URL, timeout=15).text.splitlines()
 reader = list(csv.reader(csv_lines))
 
-# ログ出力で確認（任意）
-print("DATA ROW:", reader[1][:8])
-print("HEADER:", reader[0][:5])
-
 # 2行目が本データ行（確定）
 data_row = reader[1]
 
