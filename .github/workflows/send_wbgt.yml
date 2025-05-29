@@ -3,16 +3,33 @@ name: wbgt-test
 on:
   schedule:
     - cron: '0 23 * * *'   # 毎日08:00 JST（23:00 UTC）
-  workflow_dispatch:        # 手動実行も残しておく# ←テスト
+  workflow_dispatch:        # 手動実行も残しておく
 
 jobs:
   run:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - run: pip install -r requirements.txt
-      - name: run script
-        run: python get_wbgt.py
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run script and capture output
+        run: |
+          python get_wbgt.py > output.txt
+
+      - name: Send result to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE=$(cat output.txt)
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"${MESSAGE}\"}" \
+            "$SLACK_WEBHOOK_URL"
